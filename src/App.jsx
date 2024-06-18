@@ -1,3 +1,4 @@
+import { toast, Toaster } from "react-hot-toast";
 import { useEffect, useState } from "react";
 import { getImg } from "./components/services/api";
 import {
@@ -27,8 +28,6 @@ const App = () => {
       try {
         setIsLoading(true);
         const { results, total_pages } = await getImg(query, page);
-        console.log("Results:", results);
-        console.log("Total pages:", total_pages);
 
         if (!total_pages) {
           setIsEmpty(true);
@@ -47,6 +46,10 @@ const App = () => {
   }, [query, page]);
 
   const onSubmit = (newQuery) => {
+    if (!newQuery.trim()) {
+      toast.error("Search field is epmty");
+      return;
+    }
     setQuery(newQuery);
     setPage(1);
     setImages([]);
@@ -71,6 +74,7 @@ const App = () => {
 
   return (
     <>
+      <Toaster />
       <SearchBar onSubmit={onSubmit} />
       {images.length > 0 && (
         <ImageGallery photos={images} handleModalOpen={handleModalOpen} />

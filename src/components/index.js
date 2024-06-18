@@ -1,4 +1,3 @@
-export * from "./ErrorMessage/ErrorMessage";
 export * from "./Heading/Heading";
 export * from "./ImageCard/ImageCard";
 export * from "./ImageGallery/ImageGallery";
