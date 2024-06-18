@@ -1,50 +1,91 @@
-import { useState, useEffect } from "react";
-import { ContactList, SearchBox, ContactForm } from "./components";
-import { nanoid } from "nanoid";
-const userData = [
-  { id: "id-1", name: "Rosie Simpson", number: "459-12-56" },
-  { id: "id-2", name: "Hermione Kline", number: "443-89-12" },
-  { id: "id-3", name: "Eden Clements", number: "645-17-79" },
-  { id: "id-4", name: "Annie Copeland", number: "227-91-26" },
-];
+import { useEffect, useState } from "react";
+import { getImg } from "./components/services/api";
+import {
+  SearchBar,
+  ImageGallery,
+  LoadMoreBtn,
+  Loader,
+  Heading,
+  ImageModal,
+} from "components";
 
 const App = () => {
-  const [users, setUsers] = useState(() => {
-    const savedUsers = JSON.parse(localStorage.getItem("users"));
-    return savedUsers || userData;
-  });
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [images, setImages] = useState([]);
+  const [showBtn, setShowBtn] = useState(false);
+  const [isEmpty, setIsEmpty] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(false);
+  const [selectImg, setSelectImg] = useState(null);
+  const [isOpenModal, setIsOpenModal] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem("users", JSON.stringify(users));
-  }, [users]);
+    if (!query) return;
 
-  const [searchValue, setSearchValue] = useState("");
+    const getData = async () => {
+      try {
+        setIsLoading(true);
+        const { results, total_pages } = await getImg(query, page);
+        console.log("Results:", results);
+        console.log("Total pages:", total_pages);
 
-  const createUser = (name, number) => {
-    const newUser = { id: nanoid(), name, number };
-    setUsers((prev) => [...prev, newUser]);
+        if (!total_pages) {
+          setIsEmpty(true);
+          return;
+        }
+
+        setImages((prev) => [...prev, ...results]);
+        setShowBtn(page < total_pages);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    getData();
+  }, [query, page]);
+
+  const onSubmit = (newQuery) => {
+    setQuery(newQuery);
+    setPage(1);
+    setImages([]);
+    setShowBtn(false);
+    setIsEmpty(false);
+    setError(null);
   };
 
-  const handleDeleteUser = (id) => {
-    setUsers((prev) => prev.filter((item) => item.id !== id));
+  const handleLoadMore = () => {
+    setPage((prev) => prev + 1);
   };
 
-  const getFileredData = () => {
-    return users.filter((item) =>
-      item.name.toLocaleLowerCase().includes(searchValue.toLocaleLowerCase())
-    );
+  const handleModalOpen = (img) => {
+    setIsOpenModal(true);
+    setSelectImg(img);
+  };
+
+  const closeModal = () => {
+    setIsOpenModal(false);
+    setSelectImg(null);
   };
 
   return (
-    <div>
-      <h1>Phonebook</h1>
-      <ContactForm createUser={createUser} />
-      <SearchBox searchValue={searchValue} setSearchValue={setSearchValue} />
-      <ContactList
-        users={getFileredData()}
-        handleDeleteUser={handleDeleteUser}
+    <>
+      <SearchBar onSubmit={onSubmit} />
+      {images.length > 0 && (
+        <ImageGallery photos={images} handleModalOpen={handleModalOpen} />
+      )}
+      {showBtn && <LoadMoreBtn onClick={handleLoadMore} />}
+
+      {isEmpty && <Heading text={"We did not found photos"} />}
+      {isLoading && <Loader />}
+      {error && <Heading text={`Something went wrong ${error}`} />}
+      <ImageModal
+        modalIsOpen={isOpenModal}
+        closeModal={closeModal}
+        selectImg={selectImg}
       />
-    </div>
+    </>
   );
 };
 

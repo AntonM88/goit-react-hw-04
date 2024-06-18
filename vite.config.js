@@ -8,6 +8,10 @@ export default defineConfig({
   //   sourcemap: true,
   // },
   resolve: {
-    alias: { components: "/src/components", data: "/src/data" },
+    alias: {
+      components: "/src/components",
+      data: "/src/data",
+      services: "/src/services",
+    },
   },
 });
